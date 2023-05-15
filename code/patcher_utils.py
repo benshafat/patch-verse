@@ -170,7 +170,6 @@ def patch_transform(patcher, data_shape, rotate_func):
     m_size = patcher.dims[-1]
 
     for i in range(patch_slide.shape[0]):
-
         patch = rotate_func(patch, i)
 
         # random location
