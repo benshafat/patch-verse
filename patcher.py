@@ -30,14 +30,10 @@ class Patcher(object):
         self.patch, self.dims = self.init_func(image_size=self.image_size, patch_size=self.size)
         os.makedirs(Path(self.save_path) / 'patches', exist_ok=True)
 
-
     def prepare_patch(self, image):
         """
         given an image, prepare a patch for it it at a random place & orientation.
         """
-
-        # todo: should there be a distinction b/w patch and patch_slide? I converted all the variables here to slide,
-        # todo: but is that correct?
         image_shape = image.data.cpu().numpy().shape
         patch_slide, mask = putils.patch_transform(patcher=self, data_shape=image_shape,
                                                    rotate_func=self.trans_func)
@@ -84,7 +80,6 @@ class PatchAttacker(object):
         self.patcher = None
         self.train_stats = None
         self.test_stats = None
-        self.ignore_idx = None  # set of image ids to ignore for training
         os.makedirs(Path(self.save_path) / 'attack_log', exist_ok=True)
         self._init_datasets(train_size, test_size)
 
@@ -94,7 +89,7 @@ class PatchAttacker(object):
         idx = np.arange(50000)  # number of images in validation set of imagenet
         np.random.shuffle(idx)
         training_idx = idx[:train_size]
-        test_idx = idx[train_size:test_size]
+        test_idx = idx[train_size:(train_size + test_size)]
         normalize = transforms.Normalize(mean=self.classifier.mean, std=self.classifier.std)
         self.train_set = putils.get_data_loader(classifier=self.classifier, num_workers=2,
                                                 idx=training_idx, normalize=normalize)
@@ -117,7 +112,7 @@ class PatchAttacker(object):
             print(f"Running Training Epoch {i}")
             total, success = self._train_epoch(target, epoch_num=i)
             self.patcher.save_patch_to_disk()
-            self.train_stats[i] = (total, success)
+            self.train_stats[i] = {'Train set size': total, 'patch effective': success}
         return self.train_stats
 
     def _train_epoch(self, target, epoch_num):
@@ -128,9 +123,7 @@ class PatchAttacker(object):
             image, labels = Variable(image), Variable(labels)
             orig_label = labels.data[0]
             if self._misclassified(image, orig_label):
-                # self.ignore_idx.add(image_idx)  # avoid calling classifier
                 print(f"Ignoring image {image_idx} with label {orig_label}")
-                print(labels.data)
                 continue
             total += 1
             patch, mask = self.patcher.prepare_patch(image)
@@ -142,7 +135,7 @@ class PatchAttacker(object):
                 continue
             success += 1
             print(f"**** Fooled image {image_idx} !!!!")
-            if success % 50 == 0:
+            if success % 50 == 0:  # every so often, save a successfully patched image so we can see how it looks
                 self._log_images(image, patched_image, image_idx, orig_label, target)
         return total, success
 
@@ -162,7 +155,7 @@ class PatchAttacker(object):
         while self.params['conf_target'] > target_prob and count < self.params['max_iter']:
             adv_image = Variable(adv_image.data, requires_grad=True)
             adv_out = F.log_softmax(self.classifier(adv_image), dim=1)
-            loss = -adv_out[0][target]  # todo: research these lines. can we take softmax from all the images together?
+            loss = -adv_out[0][target]
             loss.backward()
             adv_grad = adv_image.grad.clone()
             adv_image.grad.data.zero_()
@@ -213,6 +206,6 @@ class PatchAttacker(object):
             if self._misclassified(adv_image, target):
                 continue
             success += 1
-        self.test_stats = (total, success)
+        self.test_stats = {'Test set size': total, 'patch effective': success}
         return self.test_stats
 

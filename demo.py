@@ -28,7 +28,8 @@ if  __name__ == '__main__':
     seed = None
     train_size = 200
     test_size = 200
-    target = 813  # 859 # toaster. vs. 813  # spatula
+    # target = 859 # toaster
+    target = 813  # spatula
     patch_params = {'shape': 'circle', 'size': 0.05, 'image_size': 299}
     attack_params = {'conf_target': 0.85, 'max_iter': 500, 'epochs': 10}
     save_path = '/Users/elisharosensweig/workspace/Playground/adverse-test'
@@ -46,5 +47,8 @@ if  __name__ == '__main__':
     train_stats = patch_attacker.train_patch(target=target)
     patch_attacker.patcher.save_patch_to_disk()
     test_stats = patch_attacker.evaluate_patch(target=target)
-    print(train_stats)
-    print(test_stats)
+    print('\n= = = = = = = = = = = = = = = = = = = = = = = = = =\n')
+    print('* Train Set Stats:\n')
+    for i in range(attack_params['epochs']):
+        print(f'\tepoch {i}: {train_stats[i]}')
+    print(f'* Test Set Stats: {test_stats}')
