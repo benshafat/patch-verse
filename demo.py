@@ -26,10 +26,11 @@ def seed_everything(seed=None):
 
 if  __name__ == '__main__':
     seed = None
-    train_size = 200
-    test_size = 200
+    train_size = 20
+    test_size = 20
     # target = 859 # toaster
-    target = 813  # spatula
+#    target = 813  # spatula
+    target = 587 # hammer
     patch_params = {'shape': 'circle', 'size': 0.05, 'image_size': 299}
     attack_params = {'conf_target': 0.85, 'max_iter': 500, 'epochs': 10}
     save_path = '/Users/elisharosensweig/workspace/Playground/adverse-test'
