@@ -1,12 +1,12 @@
 # patch-verse
 
-This code was worked on as a side-project, trying to implement the Adversarial Patch algorithmfor attacking image classification models.
+This code was worked on as part of a home-exam, trying to implement the Adversarial Patch algorithm 
+for attacking image classification models.
 
-It was based off https://github.com/jhayes14/adversarial-patch
+The core of the code here is the code in https://github.com/jhayes14/adversarial-patch
+
+The code assumes you have an imagenet directory setup for image sampling. See the original project for details.
 
 Code improvements:
-	* Lots of code-smell fixes
+	* Lots of code-smell & bug fixes
 	* Object oriented implementation
-	* Prevented repeat calls to classifier on images we already know were misclassified in original
-
-Bug fixes:
