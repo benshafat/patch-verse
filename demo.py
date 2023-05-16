@@ -25,14 +25,15 @@ def seed_everything(seed=None):
 
 
 if  __name__ == '__main__':
-    seed = None
-    train_size = 20
-    test_size = 20
+    seed = 1294
+    train_size = 1000
+    test_size = 500
+    ### https://deeplearning.cms.waikato.ac.nz/user-guide/class-maps/IMAGENET/
     # target = 859 # toaster
-#    target = 813  # spatula
-    target = 587 # hammer
+    target = 813  # spatula
+    #target = 340 # zebra
     patch_params = {'shape': 'circle', 'size': 0.05, 'image_size': 299}
-    attack_params = {'conf_target': 0.85, 'max_iter': 500, 'epochs': 10}
+    attack_params = {'conf_target': 0.85, 'max_iter': 500, 'epochs': 20}
     save_path = '/Users/elisharosensweig/workspace/Playground/adverse-test'
 
     seed_everything(seed=seed)
@@ -46,10 +47,10 @@ if  __name__ == '__main__':
                                    patch_params=patch_params,
                                    save_path=save_path, log_images=True)
     train_stats = patch_attacker.train_patch(target=target)
-    patch_attacker.patcher.save_patch_to_disk()
+    patch_attacker.patcher.save_patch_to_disk(tag='final')
     test_stats = patch_attacker.evaluate_patch(target=target)
     print('\n= = = = = = = = = = = = = = = = = = = = = = = = = =\n')
     print('* Train Set Stats:\n')
     for i in range(attack_params['epochs']):
-        print(f'\tepoch {i}: {train_stats[i]}')
+        print(f'\tepoch {i} - {train_stats[i]}')
     print(f'* Test Set Stats: {test_stats}')

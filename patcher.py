@@ -50,12 +50,12 @@ class Patcher(object):
                 new_patch[i][j] = putils.submatrix(patch[i][j])
         return new_patch
 
-    def save_patch_to_disk(self):
+    def save_patch_to_disk(self, tag=None):
         """
         save patch image at path
         """
         ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-        path = Path(self.save_path) / 'patches' / f'patch-{ts}.png'
+        path = Path(self.save_path) / 'patches' / f'patch-{tag}-{ts}.png'
         tensor_patch = torch.FloatTensor(self.patch)
         tvutils.save_image(tensor_patch, path, normalize=True)
 
@@ -111,7 +111,7 @@ class PatchAttacker(object):
         for i in range(self.params['epochs']):
             print(f"Running Training Epoch {i}")
             total, success = self._train_epoch(target, epoch_num=i)
-            self.patcher.save_patch_to_disk()
+            self.patcher.save_patch_to_disk(tag=f'epoch{i}')
             self.train_stats[i] = {'Train set size': total, 'patch effective': success}
         return self.train_stats
 
@@ -164,8 +164,6 @@ class PatchAttacker(object):
             adv_image = self._attack_image(victim, patch, mask)
             out = F.softmax(self.classifier(adv_image), dim=1)
             target_prob = out.data[0][target]
-            if count % 50 == 0:
-                print(f'Reached {count} iterations. Loss = {loss}, Target success prob: {target_prob}')
             count += 1
 
         print(f'**** Took {count} iterations - {datetime.now()}')
@@ -185,7 +183,7 @@ class PatchAttacker(object):
             tvutils.save_image(orig_image, original_path, normalize=True)
             tvutils.save_image(patched_image, patched_path, normalize=True)
 
-    def evaluate_patch(self, target):
+    def evaluate_patch(self, target, check_protect=True):
         """
         Evaluate patch on test set
         """
@@ -194,6 +192,8 @@ class PatchAttacker(object):
 
         total = 0
         success = 0
+        attack_disrupted = 0
+        orig_resilient = 0
         for image_idx, (image, labels) in enumerate(self.test_set):
             image, labels = Variable(image), Variable(labels)
             orig_label = labels.data[0]
@@ -206,6 +206,24 @@ class PatchAttacker(object):
             if self._misclassified(adv_image, target):
                 continue
             success += 1
-        self.test_stats = {'Test set size': total, 'patch effective': success}
+            if check_protect:  # add random noise
+                noisy_image = self.get_noisy_patched(adv_image, image_idx, orig_label, target)
+                if self._misclassified(noisy_image, target):
+                    attack_disrupted += 1
+                if not self._misclassified(noisy_image, orig_label):
+                    orig_resilient += 1
+        self.test_stats = {'Test set size': total, 'patch effective': success,
+                           'noise_disrupts_patch': attack_disrupted,
+                           'orig_resilient_with_noise': orig_resilient}
         return self.test_stats
+
+    def get_noisy_patched(self, adv_image, image_idx, orig_label, target):
+        noise = torch.randn_like(adv_image)
+        # Specify the magnitude or intensity of the noise
+        noise_intensity = 0.05
+        # Add the noise to the image tensor
+        noisy_image = adv_image + noise_intensity * noise
+        noisy_path = Path(self.save_path) / 'attack_log' / f'{image_idx}_noise{noise_intensity}_{orig_label}_{target}.png'
+        tvutils.save_image(noisy_image, noisy_path, normalize=True)
+        return noisy_image
 
