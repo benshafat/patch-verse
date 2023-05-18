@@ -29,7 +29,6 @@ class PatchAttacker(object):
         self.patcher = None
         self.train_stats = None
         self.test_stats = None
-        self.ignore_ids = set()
         self.logger = logger
         os.makedirs(Path(self.save_path) / 'attack_log', exist_ok=True)
         self._init_datasets(train_size, test_size)
@@ -91,9 +90,6 @@ class PatchAttacker(object):
             orig_label = labels.data[0]
             if target == orig_label or self._non_match(image, orig_label):
                 self.logger.info(f"Ignoring image {image_idx} with label {orig_label}")
-                if image_id in self.ignore_ids:
-                    self.logger.info(f"this works: {image_id}")
-                self.ignore_ids.add(image_id)
                 continue  # todo: see if we can avoid classifying these more than once. stable id? hash?
             total += 1
 

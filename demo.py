@@ -22,8 +22,8 @@ if __name__ == '__main__':
     # target class we want to reach with patch .
     # see https://deeplearning.cms.waikato.ac.nz/user-guide/class-maps/IMAGENET/ for mapping of name to class
     target = config['attack_params']['target']
-    seed_everything(seed=config['seed'])
-
+    seed = seed_everything(seed=config['seed'])
+    logger.info(f"Seed: {seed}")
     logger.info("=> load model ")
     netClassifier = pretrainedmodels.__dict__['inceptionv3'](num_classes=1000, pretrained='imagenet')
 
