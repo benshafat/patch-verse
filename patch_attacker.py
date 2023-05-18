@@ -36,7 +36,7 @@ class PatchAttacker(object):
     def _init_datasets(self, train_size, test_size):
         self.logger.info("==> initializing datasets")
 
-        idx = np.arange(50000)  # number of images in validation set of imagenet
+        idx = np.arange(50000)  # 50K = number of images in validation set of imagenet
         np.random.shuffle(idx)
         training_idx = idx[:train_size]
         test_idx = idx[train_size:(train_size + test_size)]
@@ -66,7 +66,7 @@ class PatchAttacker(object):
             self.train_stats[i] = {'Train set size': total, 'patch effective': success,
                                    'avg attack iters': round(float(iter_sum)/total, 2)}
 
-            test_results = self.evaluate_patch(target)
+            test_results = self.evaluate_patch(target, check_protect=False)  # defense only checked on final patch
             self.logger.info(f'=======================')
             self.logger.info(f'Epoch {i} test results:')
             self.logger.info(test_results)
@@ -85,7 +85,6 @@ class PatchAttacker(object):
         iter_sum = 0
         for image_idx, (image, labels) in enumerate(self.train_set):
             self.logger.info(f'Epoch #{epoch_num} image #{image_idx}')
-            image_id = id(image)
             image, labels = Variable(image), Variable(labels)
             orig_label = labels.data[0]
             if target == orig_label or self._non_match(image, orig_label):
@@ -145,6 +144,7 @@ class PatchAttacker(object):
         return adv_image, patch, count
 
     def _attack_image(self, image, patch, mask):
+        """ Add patch to image """
         adv_image = torch.mul((1 - mask), image) + torch.mul(mask, patch)
         adv_image = torch.clamp(adv_image, self.min_out, self.max_out)
         return adv_image
@@ -194,6 +194,7 @@ class PatchAttacker(object):
         return self.test_stats
 
     def get_noisy_patched(self, adv_image):
+        """ Get image with noise added to it. """
         noise = torch.randn_like(adv_image)
         noise_intensity = 0.15  # magnitude of noise
         noisy_image = adv_image + noise_intensity * noise

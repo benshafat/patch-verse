@@ -33,7 +33,7 @@ if __name__ == '__main__':
                                    save_path=config['save_path'], log_images=True, logger=logger)
     train_stats = patch_attacker.train_patch(target=target)
     patch_attacker.patcher.save_patch_to_disk(tag='final')
-    test_stats = patch_attacker.evaluate_patch(target=target)
+    test_stats = patch_attacker.evaluate_patch(target=target, check_protect=True)
     logger.info('\n= = = = = = = = = = = = = = = = = = = = = = = = = =\n')
     logger.info('* Train Set Stats:\n')
     for i in range(config['attack_params']['max_epochs']):
