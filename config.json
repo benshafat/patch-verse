@@ -1,0 +1,19 @@
+{
+  "seed": 42,
+  "train_size": 1000,
+  "test_size": 500,
+
+  "patch_params" :
+    {"shape": "circle",
+      "size": 0.1,
+      "image_size": 299
+    },
+  "attack_params" :
+    { "target": 605,
+      "conf_target": 0.9,
+      "max_iter": 500,
+      "max_epochs": 3,
+      "success_thresh": 0.75
+    },
+    "save_path": "/Users/elisharosensweig/workspace/Playground/adverse-test"
+}

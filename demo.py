@@ -1,18 +1,16 @@
+"""
+This module runs the Adversarial Patch attack.
+See config.json file for example config
+"""
 
+
+import json
+import logging
 import random
-import torch.nn.parallel
-import torch.utils.data
-
-import torch
-import torchvision.models as models
-
-# Example usage
-model = models.inception_v3(weights=None, init_weights=True)
-
-from pretrained_models_pytorch import pretrainedmodels
 
 from patcher_utils import *
-from patcher import PatchAttacker
+from patch_attacker import PatchAttacker
+from pretrained_models_pytorch import pretrainedmodels
 
 
 def seed_everything(seed=None):
@@ -24,33 +22,30 @@ def seed_everything(seed=None):
     torch.manual_seed(seed)
 
 
-if  __name__ == '__main__':
-    seed = 1294
-    train_size = 1000
-    test_size = 500
-    ### https://deeplearning.cms.waikato.ac.nz/user-guide/class-maps/IMAGENET/
-    # target = 859 # toaster
-    target = 813  # spatula
-    #target = 340 # zebra
-    patch_params = {'shape': 'circle', 'size': 0.05, 'image_size': 299}
-    attack_params = {'conf_target': 0.85, 'max_iter': 500, 'epochs': 20}
-    save_path = '/Users/elisharosensweig/workspace/Playground/adverse-test'
+if __name__ == '__main__':
+    logger = logging.getLogger('PatchLogger')
 
-    seed_everything(seed=seed)
-    print("=> creating model ")
+    config_path = 'config.json'
+    config = json.loads(config_path)
 
+    # target class we want to reach with patch .
+    # see https://deeplearning.cms.waikato.ac.nz/user-guide/class-maps/IMAGENET/ for mapping of name to class
+    target = config['attack_params']['target']
+    seed_everything(seed=config['seed'])
+
+    print("=> load model ")
     netClassifier = pretrainedmodels.__dict__['inceptionv3'](num_classes=1000, pretrained='imagenet')
 
     print("=> launch patch training")
-    patch_attacker = PatchAttacker(classifier=netClassifier, attack_params=attack_params,
-                                   train_size=train_size, test_size=test_size,
-                                   patch_params=patch_params,
-                                   save_path=save_path, log_images=True)
+    patch_attacker = PatchAttacker(classifier=netClassifier,
+                                   patch_params=config['patch_params'], attack_params=config['attack_params'],
+                                   train_size=config['train_size'], test_size=config['test_size'],
+                                   save_path=config['save_path'], log_images=True, logger=logger)
     train_stats = patch_attacker.train_patch(target=target)
     patch_attacker.patcher.save_patch_to_disk(tag='final')
     test_stats = patch_attacker.evaluate_patch(target=target)
     print('\n= = = = = = = = = = = = = = = = = = = = = = = = = =\n')
     print('* Train Set Stats:\n')
-    for i in range(attack_params['epochs']):
+    for i in range(config['attack_params']['max_epochs']):
         print(f'\tepoch {i} - {train_stats[i]}')
     print(f'* Test Set Stats: {test_stats}')
