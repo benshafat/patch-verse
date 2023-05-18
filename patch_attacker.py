@@ -1,16 +1,21 @@
+"""
+Module for attack class.
+The class stores and updates the patch along the gradient to minimize the loss function for the given target class.
+"""
 import logging
 import os
-
-import torch
-from torch.autograd import Variable
-import torch.nn.functional as F
-import torchvision.transforms as transforms
-import numpy as np
 from pathlib import Path
 
-import patcher_utils as putils
+import numpy as np
+import torch
+import torch.nn.functional as F
+import torchvision.transforms as transforms
 import torchvision.utils as tvutils
+from torch.autograd import Variable
+
+import patcher_utils as putils
 from patcher import Patcher
+
 
 class PatchAttacker(object):
 
@@ -24,6 +29,7 @@ class PatchAttacker(object):
         self.patcher = None
         self.train_stats = None
         self.test_stats = None
+        self.ignore_ids = set()
         self.logger = logger
         os.makedirs(Path(self.save_path) / 'attack_log', exist_ok=True)
         self._init_datasets(train_size, test_size)
@@ -48,6 +54,7 @@ class PatchAttacker(object):
         self.logger.info("==> initialized datasets !!")
 
     def train_patch(self, target):
+        self.logger.info("=> Start patch training")
         prev_success = 0
         self.classifier.eval()
         self.train_stats = dict()
@@ -56,54 +63,66 @@ class PatchAttacker(object):
         for i in range(self.params['max_epochs']):
             self.logger.info(f"Running Training Epoch {i}")
             total, success, iter_sum = self._train_epoch(target, epoch_num=i)
-            self.patcher.save_patch_to_disk(tag=f'epoch{i}')
+            self.patcher.save_patch_to_disk(tag=f'epoch{i}')  # log patch evolution over epochs
             self.train_stats[i] = {'Train set size': total, 'patch effective': success,
                                    'avg attack iters': round(float(iter_sum)/total, 2)}
+
             test_results = self.evaluate_patch(target)
-            attack_success = float(test_results['patch effective']) / test_results['Test set size']
             self.logger.info(f'=======================')
             self.logger.info(f'Epoch {i} test results:')
             self.logger.info(test_results)
             self.logger.info(f'=======================')
-            if attack_success > self.params['success_thresh']:
-                break  # attack is good enough, no need to continue
-            if attack_success - prev_success < 0.01: # not getting much better each epoch
-                break
+
+            # Let's prevent useless training - if we're stable or relatively effective, we should stop.
+            attack_success = float(test_results['patch effective']) / test_results['Test set size']
+            if attack_success > self.params['success_thresh'] or attack_success - prev_success < 0.01:
+                break  # attack is good enough or not improving, no need to continue
         return self.train_stats
 
     def _train_epoch(self, target, epoch_num):
+        """ Round of training. Iterate over all training set images and modify patch to misclassify as target. """
         success = 0
         total = 0
         iter_sum = 0
         for image_idx, (image, labels) in enumerate(self.train_set):
             self.logger.info(f'Epoch #{epoch_num} image #{image_idx}')
-
+            image_id = id(image)
             image, labels = Variable(image), Variable(labels)
             orig_label = labels.data[0]
-            if target == orig_label or self._misclassified(image, orig_label):
+            if target == orig_label or self._non_match(image, orig_label):
                 self.logger.info(f"Ignoring image {image_idx} with label {orig_label}")
+                if image_id in self.ignore_ids:
+                    print(f"this works: {image_id}")
+                self.ignore_ids.add(image_id)
                 continue  # todo: see if we can avoid classifying these more than once. stable id? hash?
             total += 1
+
+            # try to adapt patch so image is classified as target
             patch, mask = self.patcher.prepare_patch(image)
             patched_image, new_patch, iter_count = self._adapt_patch_to_image(victim=image, target=target,
                                                                               patch=patch, mask=mask)
-            iter_sum += iter_count
+            iter_sum += iter_count  # the number of iterations should gradually decrease over epochs
             self.patcher.update_patch(
                 self.patcher.extract_patch_from_masked(masked_patch=new_patch, mask=mask)
             )
-            if self._misclassified(patched_image, target):  # attack failed
+            if self._non_match(patched_image, target):  # attack failed
                 continue
             success += 1
+
             if success % 50 == 0:  # every so often, save a successfully patched image so we can see how it looks
                 self._log_images(image, patched_image, image_idx, orig_label, target)
         return total, success, iter_sum
 
-    def _misclassified(self, image, label):
+    def _non_match(self, image, label):
+        """ Return true if image is not classified as label, false if it is """
         prediction = self.classifier(image.data)
         prediction = prediction.data.max(1)[1][0]
         return prediction != label
 
     def _adapt_patch_to_image(self, victim, target, patch, mask):
+        """
+        The brain of the attack: adapting the patch to be more successful
+        """
         self.classifier.eval()
         smax = F.softmax(self.classifier(victim), dim=1)
         target_prob = smax.data[0][target]  # current state of target probability
@@ -142,9 +161,7 @@ class PatchAttacker(object):
             tvutils.save_image(patched_image, patched_path, normalize=True)
 
     def evaluate_patch(self, target, check_protect=True):
-        """
-        Evaluate patch on test set
-        """
+        """ Evaluate patch on test set """
         self.classifier.eval()
         self.test_stats = dict()
 
@@ -155,21 +172,26 @@ class PatchAttacker(object):
         for image_idx, (image, labels) in enumerate(self.test_set):
             image, labels = Variable(image), Variable(labels)
             orig_label = labels.data[0]
-            if orig_label == target or self._misclassified(image, orig_label):
+            if orig_label == target or self._non_match(image, orig_label):
                 self.logger.info(f"Ignoring image {image_idx} with label {orig_label}")
                 continue
             total += 1
+
+            # Attack image with trained patch
             patch, mask = self.patcher.prepare_patch(image)
             adv_image = self._attack_image(image, patch, mask)
-            if self._misclassified(adv_image, target):
+            if self._non_match(adv_image, target):
                 continue
             success += 1
-            if check_protect:  # check - can random noise added to the image protect it from the patch?
+
+            # check - can random noise added to the image protect it from the patch?
+            if check_protect:
                 noisy_image = self.get_noisy_patched(adv_image)
-                if self._misclassified(noisy_image, target):
+                if self._non_match(noisy_image, target):
                     attack_disrupted += 1
-                if not self._misclassified(noisy_image, orig_label):
+                if not self._non_match(noisy_image, orig_label):
                     orig_resilient += 1
+
         self.test_stats = {'Test set size': total, 'patch effective': success,
                            'noise_disrupts_patch': attack_disrupted,
                            'orig_resilient_with_noise': orig_resilient}

@@ -6,10 +6,9 @@ See config.json file for example config
 
 import json
 
-from patcher_utils import *
 from patch_attacker import PatchAttacker
+from patcher_utils import *
 from pretrained_models_pytorch import pretrainedmodels
-
 
 if __name__ == '__main__':
 
@@ -28,7 +27,6 @@ if __name__ == '__main__':
     logger.info("=> load model ")
     netClassifier = pretrainedmodels.__dict__['inceptionv3'](num_classes=1000, pretrained='imagenet')
 
-    logger.info("=> launch patch training")
     patch_attacker = PatchAttacker(classifier=netClassifier,
                                    patch_params=config['patch_params'], attack_params=config['attack_params'],
                                    train_size=config['train_size'], test_size=config['test_size'],

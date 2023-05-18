@@ -1,15 +1,16 @@
+"""
+Module for a class storing the patch state and configuration parameters.
+"""
 import os
-
-import torch
-from torch.autograd import Variable
-import torch.nn.functional as F
-import torchvision.transforms as transforms
-import numpy as np
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+import numpy as np
+import torch
+import torchvision.utils as tvutils
+from torch.autograd import Variable
 
 import patcher_utils as putils
-import torchvision.utils as tvutils
 
 
 class Patcher(object):

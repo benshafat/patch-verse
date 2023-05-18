@@ -1,11 +1,11 @@
 {
     "seed": 42,
-    "train_size": 1000,
-    "test_size": 500,
+    "train_size": 30,
+    "test_size": 30,
     "patch_params":
     {
         "shape": "circle",
-        "size": 0.1,
+        "size": 0.05,
         "image_size": 299
     },
     "attack_params":
