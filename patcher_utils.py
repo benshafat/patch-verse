@@ -1,10 +1,21 @@
 import math
+import random
 import numpy as np
+import logging
 from scipy.ndimage.interpolation import rotate
 import torch
 import torchvision.transforms as transforms
 import torchvision.datasets as dset
 from torch.utils.data.sampler import SubsetRandomSampler
+
+
+def seed_everything(seed=None):
+    if seed is None:
+        seed = random.randint(1, 10000)
+    print("Random Seed: ", seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
 
 def submatrix(arr):
@@ -119,3 +130,26 @@ class ToRange255(object):
         if self.is_255:
             tensor.mul_(255)
         return tensor
+
+
+def get_logger(logfile, file_level=logging.DEBUG, stream_level=logging.INFO):
+    # Configure the root logger
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+    # logfile
+    file_handler = logging.FileHandler(logfile)
+    file_handler.setLevel(file_level)
+
+    # stdout
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(stream_level)
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    stream_handler.setFormatter(formatter)
+
+    logger = logging.getLogger('PatchLogger')
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+
+    return logger
