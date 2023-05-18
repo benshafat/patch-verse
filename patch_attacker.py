@@ -92,7 +92,7 @@ class PatchAttacker(object):
             if target == orig_label or self._non_match(image, orig_label):
                 self.logger.info(f"Ignoring image {image_idx} with label {orig_label}")
                 if image_id in self.ignore_ids:
-                    print(f"this works: {image_id}")
+                    self.logger.info(f"this works: {image_id}")
                 self.ignore_ids.add(image_id)
                 continue  # todo: see if we can avoid classifying these more than once. stable id? hash?
             total += 1

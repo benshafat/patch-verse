@@ -13,10 +13,10 @@ from torch.utils.data.sampler import SubsetRandomSampler
 def seed_everything(seed=None):
     if seed is None:
         seed = random.randint(1, 10000)
-    print("Random Seed: ", seed)
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+    return seed
 
 
 def submatrix(arr):
@@ -133,7 +133,7 @@ class ToRange255(object):
         return tensor
 
 
-def get_logger(logfile, file_level=logging.DEBUG, stream_level=logging.INFO):
+def get_patch_logger(logfile, file_level=logging.DEBUG):
     # Configure the root logger
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -141,16 +141,10 @@ def get_logger(logfile, file_level=logging.DEBUG, stream_level=logging.INFO):
     file_handler = logging.FileHandler(logfile)
     file_handler.setLevel(file_level)
 
-    # stdout
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(stream_level)
-
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
-    stream_handler.setFormatter(formatter)
 
     logger = logging.getLogger('PatchLogger')
-    logger.addHandler(file_handler)
-    logger.addHandler(stream_handler)
 
+    logger.addHandler(file_handler)
     return logger

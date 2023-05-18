@@ -17,7 +17,7 @@ if __name__ == '__main__':
         config = json.load(f)
 
     logpath = 'patchlog.log'
-    logger = get_logger(logfile=logpath)
+    logger = get_patch_logger(logfile=logpath)
 
     # target class we want to reach with patch .
     # see https://deeplearning.cms.waikato.ac.nz/user-guide/class-maps/IMAGENET/ for mapping of name to class
