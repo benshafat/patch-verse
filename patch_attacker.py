@@ -60,7 +60,7 @@ class PatchAttacker(object):
         self.patcher = Patcher(patch_params=self.patch_params, save_path=self.save_path)
 
         for i in range(self.params['max_epochs']):
-            self.logger.info(f"Running Training Epoch {i}")
+            self.logger.info(f"==> Running Training Epoch {i}")
             total, success, iter_sum = self._train_epoch(target, epoch_num=i)
             self.patcher.save_patch_to_disk(tag=f'epoch{i}')  # log patch evolution over epochs
             self.train_stats[i] = {'Train set size': total, 'patch effective': success,
@@ -84,11 +84,11 @@ class PatchAttacker(object):
         total = 0
         iter_sum = 0
         for image_idx, (image, labels) in enumerate(self.train_set):
-            self.logger.info(f'Epoch #{epoch_num} image #{image_idx}')
+            self.logger.debug(f'Epoch #{epoch_num} image #{image_idx}')
             image, labels = Variable(image), Variable(labels)
             orig_label = labels.data[0]
             if target == orig_label or self._non_match(image, orig_label):
-                self.logger.info(f"Ignoring image {image_idx} with label {orig_label}")
+                self.logger.debug(f"Ignoring image {image_idx} with label {orig_label}")
                 continue  # todo: see if we can avoid classifying these more than once. stable id? hash?
             total += 1
 
@@ -158,6 +158,7 @@ class PatchAttacker(object):
 
     def evaluate_patch(self, target, check_protect=True):
         """ Evaluate patch on test set """
+        self.logger.info("=> Start patch evaluation round...")
         self.classifier.eval()
         self.test_stats = dict()
 
@@ -169,7 +170,7 @@ class PatchAttacker(object):
             image, labels = Variable(image), Variable(labels)
             orig_label = labels.data[0]
             if orig_label == target or self._non_match(image, orig_label):
-                self.logger.info(f"Ignoring image {image_idx} with label {orig_label}")
+                self.logger.debug(f"Ignoring image {image_idx} with label {orig_label}")
                 continue
             total += 1
 

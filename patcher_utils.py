@@ -147,4 +147,6 @@ def get_patch_logger(logfile, file_level=logging.DEBUG):
     logger = logging.getLogger('PatchLogger')
 
     logger.addHandler(file_handler)
+    logger.setLevel(logging.DEBUG)
+    
     return logger

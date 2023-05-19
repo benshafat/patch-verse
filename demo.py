@@ -36,6 +36,6 @@ if __name__ == '__main__':
     test_stats = patch_attacker.evaluate_patch(target=target, check_protect=True)
     logger.info('\n= = = = = = = = = = = = = = = = = = = = = = = = = =\n')
     logger.info('* Train Set Stats:\n')
-    for i in range(config['attack_params']['max_epochs']):
-        logger.info(f'\tepoch {i} - {train_stats[i]}')
+    for i in range(len(train_stats)):
+        logger.info(f'\tepoch {i}/{config["attack_params"]["max_epochs"]} - {train_stats[i]}')
     logger.info(f'* Test Set Stats: {test_stats}')
