@@ -54,7 +54,7 @@ class PatchAttacker(object):
 
     def train_patch(self, target):
         self.logger.info("=> Start patch training")
-        prev_success = 0
+        prev_success = -1  # dummy initial value
         self.classifier.eval()
         self.train_stats = dict()
         self.patcher = Patcher(patch_params=self.patch_params, save_path=self.save_path)
@@ -74,7 +74,7 @@ class PatchAttacker(object):
 
             # Let's prevent useless training - if we're stable or relatively effective, we should stop.
             attack_success = float(test_results['patch effective']) / test_results['Test set size']
-            if attack_success > self.params['success_thresh'] or attack_success - prev_success < 0.01:
+            if attack_success > self.params['success_thresh'] or abs(attack_success - prev_success) < 0.01:
                 break  # attack is good enough or not improving, no need to continue
         return self.train_stats
 

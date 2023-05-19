@@ -12,7 +12,7 @@
     {
         "target": 107,
         "conf_target": 0.9,
-        "max_iter": 500,
+        "max_iter": 5,
         "max_epochs": 2,
         "success_thresh": 0.65
     },

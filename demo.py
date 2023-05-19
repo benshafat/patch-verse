@@ -37,5 +37,5 @@ if __name__ == '__main__':
     logger.info('\n= = = = = = = = = = = = = = = = = = = = = = = = = =\n')
     logger.info('* Train Set Stats:\n')
     for i in range(len(train_stats)):
-        logger.info(f'\tepoch {i}/{config["attack_params"]["max_epochs"]} - {train_stats[i]}')
+        logger.info(f'\tepoch {i+1}/{config["attack_params"]["max_epochs"]} - {train_stats[i]}')
     logger.info(f'* Test Set Stats: {test_stats}')
