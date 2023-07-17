@@ -16,5 +16,5 @@
         "max_epochs": 10,
         "success_thresh": 0.75
     },
-    "save_path": "/Users/elisharosensweig/workspace/Playground/adverse-test"
+    "save_path": "/Users/user/workspace/Playground/adverse-test"
 }
