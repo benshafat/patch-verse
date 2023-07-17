@@ -7,10 +7,14 @@ The code here is a deep refactoring of the code in https://github.com/jhayes14/a
 
 The code assumes you have an imagenet directory setup for image sampling. See the original project for details.
 
+Once this is setup, the code is run from `demo.py`
+
 Main changes over the original:
 
- * Lots of code-smell & bug fixes
  * Config-file (json) to replace most arg-parse params
- * Clearer design
+ * Lots of code-smell & bug fixes, cleaner design
  * Object oriented implementation
- * Logging & Initial defenses implemented
+ * Logging
+ * Initial defenses implemented
+
+IMPORTANT: when I wrote the code, my laptop did not have NVIDIA GPU, so sadly this implementation runs on CPU - CUDA needs to be re-implemented (see original repo)
