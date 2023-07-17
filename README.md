@@ -8,7 +8,9 @@ The code here is a deep refactoring of the code in https://github.com/jhayes14/a
 The code assumes you have an imagenet directory setup for image sampling. See the original project for details.
 
 Main changes over the original:
-	* Lots of code-smell & bug fixes
- 	* Clearer design
-	* Object oriented implementation
- 	* Logging & Initial defenses implemented
+
+ * Lots of code-smell & bug fixes
+ * Config-file (json) to replace most arg-parse params
+ * Clearer design
+ * Object oriented implementation
+ * Logging & Initial defenses implemented
